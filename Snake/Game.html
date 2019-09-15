@@ -1,0 +1,193 @@
+<html>
+    
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+  var bgSizeX, bgSizeY;
+  var bgSqSize;
+  var bgSqDistance;
+  var bgColor;
+  
+  var snakePosX, snakePosY;
+  var snakeSpeedX, snakeSpeedY;
+  var speed;
+  var snakeSize;
+
+  var applePosX, applePosY;
+
+  var tailX, tailY;
+  var prevX, prevY;
+  var prev2X, prev2Y;
+  var prev3X, prev3Y;
+
+  var pause;
+
+  var counter;
+  var startCounting;
+  var gameStarted;
+
+  window.onload = function() {
+    canvas = document.getElementById('gameCanvas');
+    canvasContext = canvas.getContext('2d');
+    document.addEventListener('keydown', keyPush);
+
+    setValues();
+    drawMap();
+    drawSnake();
+    var fps = 1;
+    setInterval(function(){
+      drawMap();
+      drawSnake();
+      drawApple();
+    }, 1000/fps);
+  }
+
+  function setValues(){
+    bgSizeX = 40;
+    bgSizeY = 30;
+    bgSqSize = 19; //debe ser menor que bgSqDistance
+    bgSqDistance = 20;
+    bgColor = 'green';
+
+    snakePosX = bgSizeX/2*bgSqDistance;
+    snakePosY = bgSizeY/2*bgSqDistance;
+
+    snakeSpeedX = 0;
+    snakeSpeedY = 0;
+    speed = bgSqDistance;
+
+    snakeSize = 4;
+
+    tailX = new Array(snakeSize-1);
+    tailY = new Array(snakeSize-1);
+
+    pause = false;
+
+    counter = 0;
+
+    applePosX = Math.floor(Math.random()*bgSizeX)*bgSqDistance;
+    applePosY = Math.floor(Math.random()*bgSizeY)*bgSqDistance;
+  }
+
+  function reset(){
+    drawMap();
+    pause = true;
+    snakePosX = bgSizeX/2*bgSqDistance;
+    snakePosY = bgSizeY/2*bgSqDistance;
+    snakeSpeedX = 0;
+    snakeSpeedX = 0;
+    snakeSize = 4;
+    tailX = new Array(snakeSize-1);
+    tailY = new Array(snakeSize-1);
+    pause = false;
+  }
+
+  function gameWon(){
+    pause = true;
+    canvasContext.fillStyle = 'black';
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+    canvasContext.fillStyle = 'white';
+    canvasContext.fillText('You won!', canvas.width/2, canvas.height/2);
+  }
+
+  function drawMap(){
+    if(pause)
+      return
+    canvasContext.fillStyle = 'black';
+    canvasContext.fillRect(0, 0, canvas.width, canvas.height);
+    for(var i = 0; i<bgSizeX; i++)
+      for(var j = 0; j<bgSizeY; j++)
+        drawRect(i*bgSqDistance, j*bgSqDistance, bgColor);
+  }
+
+  function drawSnake(){
+    if(snakeSize > 4 && counter>snakeSize)
+      for(var i = 1; i<snakeSize; i++)
+        if((snakePosX == tailX[i]) && (snakePosY == tailY[i]))
+          reset();
+
+    if(pause)
+      return;
+
+    if((snakePosX == applePosX) && (snakePosY == applePosY)){
+      snakeSize++;
+      if(snakeSize == bgSizeX*bgSizeY)
+        gameWon();
+      applePosX = Math.floor(Math.random()*bgSizeX)*bgSqDistance;
+      applePosY = Math.floor(Math.random()*bgSizeY)*bgSqDistance;
+    }
+
+    for(var i = snakeSize-2; i>0; i--){
+      tailX[i] = tailX[i-1];
+      tailY[i] = tailY[i-1];
+    }
+
+    var firstF = false;
+
+    tailX[0] = snakePosX;
+    tailY[0] = snakePosY;
+
+    snakePosX += snakeSpeedX;
+    snakePosY += snakeSpeedY;
+
+    //head
+    drawRect(snakePosX, snakePosY, 'blue');
+    
+    //tail
+    for(var i = 0; i<snakeSize; i++)
+      drawRect(tailX[i], tailY[i],'blue');
+
+    if(snakePosY < 0)
+      snakePosY = canvas.height-bgSqDistance;
+    if(snakePosY >= canvas.height)
+      snakePosY = 0;
+    if(snakePosX < 0)
+      snakePosX = canvas.width-bgSqDistance;
+    if(snakePosX >= canvas.width)
+      snakePosX = 0;
+
+    if(startCounting)
+      counter++;
+  }
+
+  function drawApple(){
+    drawRect(applePosX, applePosY, 'red');
+  }
+
+  function drawRect(x, y, color) {
+    canvasContext.fillStyle = color;
+    canvasContext.fillRect(x, y, bgSqSize, bgSqSize);
+  }
+
+  function keyPush(evt){
+    startCounting = true;
+    switch(evt.keyCode){
+        case 37:
+          if(snakeSpeedX == bgSqDistance)
+            break;
+            snakeSpeedX = -bgSqDistance;
+            snakeSpeedY = 0;
+            break;
+        case 38:
+          if(snakeSpeedY == bgSqDistance)
+            break;
+            snakeSpeedX = 0;
+            snakeSpeedY = -bgSqDistance;
+            break;
+        case 39:
+          if(snakeSpeedX == -bgSqDistance)
+            break;
+            snakeSpeedX = bgSqDistance;
+            snakeSpeedY = 0;
+            break;
+        case 40:
+          if(snakeSpeedY == -bgSqDistance)
+            break;
+            snakeSpeedX = 0;
+            snakeSpeedY = bgSqDistance;
+            break;
+    }
+  }
+</script>
+
+<html>

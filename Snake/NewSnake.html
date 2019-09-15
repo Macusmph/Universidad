@@ -1,0 +1,240 @@
+<html>
+
+    <canvas id="gameCanvas" width="785" height="601"></canvas>
+
+    <script>
+
+        //map
+        var sqSize;
+        var sqColor;
+        var mapX = [];
+        var mapY = [];
+
+        //snake
+        var snakeColor, snakeHeadColor;
+        var snakePosX, snakePosY;
+        var snakeSpeedX, snakeSpeedY;
+        var tailX = [];
+        var tailY = [];
+        var snakeSize;
+        var moved1Sq;
+
+        //apple
+        var applePosX, applePosY;
+        var appleColor;
+
+        var gameWonWindowColor;
+        var won;
+
+
+        window.onload = function() {
+            canvas = document.getElementById('gameCanvas');
+            canvasContext = canvas.getContext('2d');
+            document.addEventListener('keydown', keyPush);
+
+            var fps = 12;
+            won = false;
+
+            //Background
+            bgColor = 'grey';
+            drawRect(0, 0, canvas.width, canvas.height, bgColor);
+
+            //Map
+            sqSize = 20; //valor real = 20
+            sqColor = 'green';
+            separation = 3;
+
+            //Snake
+            snakeColor = 'white';
+            snakeHeadColor = 'blue';
+            tailX = [];
+            tailY = [];
+            snakeSize = 4;
+            snakeSpeedX = 0;
+            snakeSpeedY = -1;
+            moved1Sq = false;
+
+            //Apple
+            appleColor = 'red';
+
+            init();
+            setInterval(function(){
+                drawMap();
+                moveSnake();
+                drawApple();
+            }, 1000/fps);
+        }
+
+        function init(){
+            initMap();
+            initSnake();
+            initApple();
+        }
+
+        function initMap(){
+            for(var i = 0; canvas.width-sqSize >= separation+(i*(sqSize+separation)); i++)
+                for(var j = 0; canvas.height-sqSize >= separation+(j*(sqSize+separation)); j++){
+                    mapX[i] = separation+(i*(sqSize+separation));
+                    mapY[j] = separation+(j*(sqSize+separation));
+                    drawRect(mapX[i], mapY[j], sqSize, sqSize, sqColor);
+                }
+        }
+
+        function initSnake(){
+
+            //head
+            snakePosX = Math.round(mapX.length/2);
+            snakePosY = Math.round(mapY.length/2);
+
+            //tail
+            for(var i = 0; i < snakeSize-1; i++){
+                tailX[i] = snakePosX;
+                tailY[i] = snakePosY + (i+1);
+            }
+
+            drawSnake();
+        }
+
+        function initApple(){
+            newApplePos();
+        }
+
+        function drawMap(){
+            for(var i = 0; canvas.height-sqSize >= separation+(i*(sqSize+separation)); i++)
+                for(var j = 0; canvas.width-sqSize >= separation+(j*(sqSize+separation)); j++){
+                    var x = separation+(j*(sqSize+separation));
+                    var y = separation+(i*(sqSize+separation));
+                    drawRect(x, y, sqSize, sqSize, sqColor);
+                }
+        }
+
+        function drawSnake(){
+
+            //head
+            drawRect(mapX[snakePosX], mapY[snakePosY], sqSize, sqSize, snakeHeadColor);
+
+            //tail
+            for(var i = 0; i < snakeSize; i++)
+                drawRect(mapX[tailX[i]], mapY[tailY[i]], sqSize, sqSize, snakeColor);
+        }
+
+        function drawApple(){
+            drawRect(mapX[applePosX], mapY[applePosY], sqSize, sqSize, appleColor);
+        }
+
+        function moveSnake(){
+            for(var i = snakeSize-2; i>0; i--){
+                tailX[i] = tailX[i-1];
+                tailY[i] = tailY[i-1];
+            }
+            tailX[0] = snakePosX;
+            tailY[0] = snakePosY;
+
+            snakePosX += snakeSpeedX;
+            snakePosY += snakeSpeedY;
+
+            if(snakePosX == mapX.length)
+                snakePosX = 0;
+            else if(snakePosX < 0)
+                snakePosX = mapX.length-1;
+            else if(snakePosY == mapY.length)
+                snakePosY = 0;
+            else if(snakePosY < 0)
+                snakePosY = mapY.length-1;
+
+            drawSnake();
+
+            for(var i = 0; i < tailX.length; i++)
+                if( (snakePosX == tailX[i]) && (snakePosY == tailY[i]) ){
+                    snakeSize = 4;
+                    snakeSpeedX = 0;
+                    snakeSpeedY = -1;
+                    tailX = new Array(snakeSize);
+                    tailY = new Array(snakeSize);
+                    drawMap();
+                    initSnake();
+                }
+
+            if( (snakePosX == applePosX) && (snakePosY == applePosY) ){
+                if(snakeSize == (mapX.length*mapY.length))
+                    gameWon();
+                snakeSize++;
+                newApplePos();
+            }
+
+            moved1Sq = true;
+        }
+
+
+        function gameWon(){
+            snakeSpeedX = 0;
+            snakeSpeedY = 0;
+            sqColor = 'black';
+            snakeColor = sqColor;
+            appleColor = sqColor;
+            drawMap();
+            won = true;
+            alert("You won!");
+        }
+
+        function newApplePos(){
+            applePosX = Math.floor(Math.random()*mapX.length);
+            applePosY = Math.floor(Math.random()*mapY.length);
+            var allowed = false;
+            while(!allowed){
+                for(var i = 0; i<tailX.length; i++)
+                    if(applePosX == tailX[i] && applePosY == tailY[i]){
+                        applePosX = Math.floor(Math.random()*mapX.length);
+                        applePosY = Math.floor(Math.random()*mapY.length);
+                        allowed = false;
+                        break;
+                    } else{
+                        allowed = true;
+                    }
+            }
+        }
+        
+        function drawRect(x, y, sizeX, sizeY, color){
+            canvasContext.fillStyle = color;
+            canvasContext.fillRect(x, y, sizeX, sizeY);
+        }
+
+        function keyPush(evt){
+            switch(evt.keyCode){
+                case 37:
+                    if(snakeSpeedX == 1 || !moved1Sq || won)
+                        break;
+                    snakeSpeedX = -1;
+                    snakeSpeedY = 0;
+                    moved1Sq = false;
+                    break;
+                case 38:
+                    if(snakeSpeedY == 1 || !moved1Sq || won)
+                        break;
+                    snakeSpeedX = 0;
+                    snakeSpeedY = -1;
+                    moved1Sq = false;
+                    break;
+                case 39:
+                    if(snakeSpeedX == -1 || !moved1Sq || won)
+                        break;
+                    snakeSpeedX = 1;
+                    snakeSpeedY = 0;
+                    moved1Sq = false;
+                    break;
+                case 40:
+                    if(snakeSpeedY == -1 || !moved1Sq || won)
+                        break;
+                    snakeSpeedX = 0;
+                    snakeSpeedY = 1;
+                    moved1Sq = false;
+                    break;
+    }
+  }
+
+
+
+
+    </script>
+
+</html>
